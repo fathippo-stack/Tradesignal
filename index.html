@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SwingSignal — AI Swingtrading Coach</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#080808;color:#ccc;font-family:'Space Mono',monospace;min-height:100vh}
+  ::-webkit-scrollbar{width:3px}
+  ::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:2px}
+  .topbar{background:#0a0a0a;border-bottom:1px solid #161616;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo-icon{width:32px;height:32px;background:#ffab40;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#000}
+  .logo-title{font-size:13px;font-weight:700;color:#fff}
+  .logo-sub{font-size:8px;color:#555;letter-spacing:2px;text-transform:uppercase}
+  .live-dot{width:6px;height:6px;border-radius:50%;background:#00e676;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+  .disclaimer{background:#0f0a00;border-bottom:1px solid #2a1a00;padding:6px 16px;text-align:center;font-size:9px;color:#664400;letter-spacing:.5px}
+  .horizons{display:flex;border-bottom:1px solid #161616;background:#0a0a0a}
+  .horizon-btn{flex:1;padding:10px 6px;border:none;cursor:pointer;background:transparent;border-bottom:2px solid transparent;color:#555;font-size:11px;font-family:'Space Mono',monospace;letter-spacing:1px;text-transform:uppercase;transition:all .2s}
+  .horizon-btn.active{background:#1a1a1a;border-bottom:2px solid #ffab40;color:#ffab40;font-weight:700}
+  .horizon-sub{font-size:9px;color:#444;margin-top:2px}
+  .horizon-btn.active .horizon-sub{color:#888}
+  .tabs{display:flex;border-bottom:1px solid #161616;background:#0a0a0a}
+  .tab-btn{flex:1;padding:12px 8px;border:none;cursor:pointer;background:transparent;border-bottom:2px solid transparent;color:#555;font-size:11px;font-family:'Space Mono',monospace;letter-spacing:.5px;transition:all .2s}
+  .tab-btn.active{background:#111;border-bottom:2px solid #ffab40;color:#fff}
+  .content{padding:14px;max-width:900px;margin:0 auto}
+  .signal-card{background:#0d0d0d;border-radius:12px;overflow:hidden;margin-bottom:14px}
+  .card-header{padding:16px 20px 12px;border-bottom:1px solid #161616;display:flex;justify-content:space-between;align-items:center}
+  .price-row{display:flex;align-items:baseline;gap:8px;margin-top:4px}
+  .price{font-size:26px;font-weight:700;color:#fff;letter-spacing:-1px}
+  .change{font-size:12px;font-weight:600;font-family:monospace;padding:2px 8px;border-radius:4px}
+  .action-badge{padding:12px 20px;border-radius:10px;text-align:center}
+  .action-label{font-size:9px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+  .action-text{font-size:16px;font-weight:900;letter-spacing:1px;font-family:'Space Mono',monospace}
+  .confidence-section{padding:16px 20px;border-bottom:1px solid #141414;display:flex;align-items:center;gap:16px}
+  .reason-box{flex:1}
+  .reason-label{font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+  .reason-text{font-size:13px;color:#ccc;line-height:1.6}
+  .trend-badge{margin-top:8px;display:inline-block;font-size:9px;color:#ffab40;letter-spacing:1.5px;background:#ffab4015;padding:3px 8px;border-radius:4px;border:1px solid #ffab4030}
+  .levels-section{padding:16px 20px;border-bottom:1px solid #141414}
+  .section-label{font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+  .levels-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .level-box{padding:8px 10px;background:#111;border-radius:6px;text-align:center}
+  .level-label{font-size:8px;letter-spacing:1px;margin-bottom:4px;color:#555}
+  .level-val{font-size:12px;font-family:monospace;font-weight:700}
+  .rr-box{margin-top:10px;padding:8px 12px;border-radius:6px;display:flex;justify-content:space-between;align-items:center}
+  .wait-box{padding:14px 16px;background:#ffab4010;border:1px solid #ffab4025;border-radius:8px}
+  .wait-title{font-size:12px;color:#ffab40;font-weight:700;margin-bottom:6px}
+  .wait-text{font-size:12px;color:#888;line-height:1.6}
+  .indicators-section{padding:12px 20px}
+  .ind-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .ind-box{padding:6px 8px;background:#111;border-radius:5px}
+  .ind-label{font-size:8px;letter-spacing:1px;color:#555}
+  .ind-val{font-size:12px;font-family:monospace;font-weight:700;margin:2px 0}
+  .ind-status{font-size:9px;color:#555}
+  .chat-container{background:#0d0d0d;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;height:480px}
+  .chat-header{padding:12px 16px;border-bottom:1px solid #161616;background:#0a0a0a;display:flex;align-items:center;gap:8px}
+  .chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .msg{max-width:88%;padding:10px 14px;font-size:13px;line-height:1.6}
+  .msg.user{align-self:flex-end;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px 12px 4px 12px;color:#ccc}
+  .msg.ai{align-self:flex-start;background:#111;border:1px solid #ffab4020;border-radius:12px 12px 12px 4px;color:#ccc}
+  .chat-suggestions{padding:0 14px 10px;display:flex;flex-wrap:wrap;gap:6px}
+  .suggestion-chip{font-size:11px;color:#888;background:#111;border:1px solid #2a2a2a;border-radius:20px;padding:5px 12px;cursor:pointer;font-family:inherit}
+  .chat-input-row{padding:12px;border-top:1px solid #161616;display:flex;gap:8px}
+  .chat-input{flex:1;background:#141414;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;color:#ddd;font-size:13px;outline:none;font-family:inherit}
+  .send-btn{background:#ffab40;color:#000;border:none;border-radius:8px;padding:10px 18px;cursor:pointer;font-size:16px;font-weight:700;transition:all .2s}
+  .send-btn:disabled{background:#1a1a1a;color:#555;cursor:not-allowed}
+  .typing{display:flex;gap:4px;padding:8px 14px}
+  .dot{width:6px;height:6px;border-radius:50%;background:#ffab40;animation:pulse 1s ease-in-out infinite}
+  .learn-card{padding:12px 14px;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;margin-bottom:10px}
+  .learn-title{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .learn-text{font-size:12px;color:#888;line-height:1.6}
+  .hidden{display:none}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .fade{animation:fadeUp .4s ease forwards}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">S</div>
+    <div>
+      <div class="logo-title">SwingSignal</div>
+      <div class="logo-sub">AI Swingtrading Coach</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="live-dot"></div>
+    <span id="clock" style="font-size:9px;color:#444;font-family:monospace"></span>
+  </div>
+</div>
+
+<div class="disclaimer">⚠️ Utbildningssyfte endast. Inget finansiellt råd. Handla på eget ansvar.</div>
+
+<div class="horizons">
+  <button class="horizon-btn active" onclick="setHorizon('kort',this)">Kort<div class="horizon-sub">1–3 dagar</div></button>
+  <button class="horizon-btn" onclick="setHorizon('medel',this)">Medel<div class="horizon-sub">3–7 dagar</div></button>
+  <button class="horizon-btn" onclick="setHorizon('lang',this)">Lång<div class="horizon-sub">1–4 veckor</div></button>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="setTab('signal',this)">📊 Signaler</button>
+  <button class="tab-btn" onclick="setTab('chat',this)">💬 Coach</button>
+  <button class="tab-btn" onclick="setTab('learn',this)">📚 Lär dig</button>
+</div>
+
+<div class="content">
+  <!-- SIGNAL TAB -->
+  <div id="tab-signal" class="fade">
+    <div id="card-US100" class="signal-card"></div>
+    <div id="card-OMX30" class="signal-card"></div>
+  </div>
+
+  <!-- CHAT TAB -->
+  <div id="tab-chat" class="hidden fade">
+    <div class="chat-container">
+      <div class="chat-header">
+        <div class="live-dot"></div>
+        <span style="font-size:11px;color:#888;letter-spacing:2px;text-transform:uppercase">Swingtrading Coach — AI</span>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg ai">Hej! Jag är din swingtrading-coach. Fråga mig om US100 eller OMX30 — entry, stop loss, riskhantering, eller vad en signal betyder.</div>
+      </div>
+      <div class="chat-suggestions" id="suggestions">
+        <button class="suggestion-chip" onclick="fillInput('Ska jag köpa US100 nu?')">Ska jag köpa US100 nu?</button>
+        <button class="suggestion-chip" onclick="fillInput('Vad är stop loss?')">Vad är stop loss?</button>
+        <button class="suggestion-chip" onclick="fillInput('Hur stor position ska jag ta?')">Hur stor position ska jag ta?</button>
+        <button class="suggestion-chip" onclick="fillInput('Är det rätt läge för OMX30?')">Är det rätt läge för OMX30?</button>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" placeholder="Fråga din swingtrading-coach..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+        <button class="send-btn" id="send-btn" onclick="sendMsg()">↑</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEARN TAB -->
+  <div id="tab-learn" class="hidden fade">
+    <div style="font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">Swingtrading — Grunderna</div>
+    <div class="learn-card"><div class="learn-title"><span style="font-size:16px">📍</span><span style="font-size:12px;font-weight:700;color:#fff">Entry — Gå in rätt</span></div><p class="learn-text">Köp när priset studsar från stöd + RSI under 50 + MACD vänder upp. Vänta på bekräftelse — skynda aldrig.</p></div>
+    <div class="learn-card"><div class="learn-title"><span style="font-size:16px">🛡️</span><span style="font-size:12px;font-weight:700;color:#fff">Stop Loss — Skydda kapitalet</span></div><p class="learn-text">Sätt alltid stop loss INNAN du går in. En bra regel: max 1-2% av ditt kapital per trade.</p></div>
+    <div class="learn-card"><div class="learn-title"><span style="font-size:16px">🎯</span><span style="font-size:12px;font-weight:700;color:#fff">Take Profit — Ta hem vinsten</span></div><p class="learn-text">Sätt mål 1 vid nästa motståndsnivå. Ta hem 50% där, låt resten löpa mot mål 2.</p></div>
+    <div class="learn-card"><div class="learn-title"><span style="font-size:16px">⚖️</span><span style="font-size:12px;font-weight:700;color:#fff">Risk/Reward — Matematiken</span></div><p class="learn-text">Trade aldrig med R/R under 1:2. Det betyder: riskera 100kr, sikta på 200kr. Då kan du ha rätt 40% av gångerna och ändå tjäna.</p></div>
+    <div class="learn-card"><div class="learn-title"><span style="font-size:16px">⏰</span><span style="font-size:12px;font-weight:700;color:#fff">Timing — Tålamod lönar sig</span></div><p class="learn-text">Swingtraders väntar på rätt läge. Det är bättre att missa en trade än att gå in för tidigt.</p></div>
+    <div class="learn-card"><div class="learn-title"><span style="font-size:16px">📊</span><span style="font-size:12px;font-weight:700;color:#fff">Trend — Handla med marknaden</span></div><p class="learn-text">Pris över EMA20 = trend upp = leta KÖP. Pris under EMA20 = trend ned = leta SÄLJ eller vänta.</p></div>
+  </div>
+</div>
+
+<script>
+const BASE = {
+  US100:{price:29243.96,change:1.57,rsi:69.1,stochK:74.3,adx:36.2,macd:870.5,macdSignal:919.2,macdHist:-48.7,ema20:28295,ema50:26966,sma200:25196,bbUpper:30134,bbLower:26502,atr:447,volume:885900000,avgVol:1287000000,flag:"🇺🇸",name:"Nasdaq 100"},
+  OMX30:{price:3096.78,change:1.27,rsi:55.2,stochK:39.6,adx:11.8,macd:1.1,macdSignal:4.2,macdHist:-3.1,ema20:3072,ema50:3059,sma200:2904,bbUpper:3180,bbLower:2960,atr:28,volume:79328758,avgVol:120000000,flag:"🇸🇪",name:"Stockholm 30"}
+};
+
+let currentHorizon = 'kort';
+let chatHistory = [];
+
+function fmt(n,d=2){if(n==null)return'—';return Number(n).toLocaleString('sv-SE',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function fmtVol(v){if(!v)return'—';if(v>=1e9)return(v/1e9).toFixed(1)+'B';if(v>=1e6)return(v/1e6).toFixed(0)+'M';return v.toLocaleString()}
+
+function analyze(d, horizon) {
+  let buy=0,sell=0,total=0;
+  if(d.rsi<40){buy+=2;total+=2}else if(d.rsi>75){sell+=2;total+=2}else if(d.rsi>65){buy+=1;total+=2}else total+=2;
+  if(d.macdHist>0){buy+=2;total+=2}else{sell+=1;total+=2}
+  if(d.price>d.ema20&&d.ema20>d.ema50){buy+=2;total+=2}else if(d.price<d.ema20&&d.ema20<d.ema50){sell+=2;total+=2}else total+=2;
+  if(d.stochK<25){buy+=1;total+=1}else if(d.stochK>75){sell+=1;total+=1}else total+=1;
+  const bbPos=(d.price-d.bbLower)/(d.bbUpper-d.bbLower);
+  if(bbPos<0.25){buy+=1;total+=1}else if(bbPos>0.75){sell+=1;total+=1}else total+=1;
+  const bs=buy/total, ss=sell/total;
+  const trendStrong=d.adx>25;
+  const atrM=horizon==='kort'?1.5:horizon==='medel'?2.5:4;
+  const riskM=horizon==='kort'?1.0:horizon==='medel'?1.5:2.5;
+  let action,color,confidence,reason,entry,stop,t1,t2,rr;
+  if(bs>0.55){
+    action='KÖP';color='#00e676';confidence=Math.round(bs*100);
+    const p=[];if(d.rsi<50)p.push('RSI i köpzon');if(d.macdHist>0)p.push('MACD positivt');if(d.price>d.ema20)p.push('pris över EMA20');if(trendStrong)p.push('stark trend');if(d.stochK<40)p.push('Stochastic bottnar');
+    reason=p.length?p.join(' · '):'Flertalet indikatorer pekar uppåt';
+    entry=d.price;stop=Math.round((d.price-d.atr*riskM)*100)/100;t1=Math.round((d.price+d.atr*atrM)*100)/100;t2=Math.round((d.price+d.atr*atrM*1.8)*100)/100;rr=Math.round((t1-entry)/(entry-stop)*10)/10;
+  }else if(ss>0.45){
+    action='SÄLJ/STÄNG';color='#ff5252';confidence=Math.round(ss*100);
+    const p=[];if(d.rsi>65)p.push('RSI överköpt ('+Math.round(d.rsi)+')');if(d.macdHist<0)p.push('MACD negativt');if(d.price<d.ema20)p.push('pris under EMA20');if(d.stochK>70)p.push('Stochastic toppar');
+    reason=p.length?p.join(' · '):'Flertalet indikatorer pekar nedåt';
+    entry=d.price;stop=Math.round((d.price+d.atr*riskM)*100)/100;t1=Math.round((d.price-d.atr*atrM)*100)/100;t2=Math.round((d.price-d.atr*atrM*1.8)*100)/100;rr=Math.round((entry-t1)/(stop-entry)*10)/10;
+  }else{
+    action='VÄNTA';color='#ffab40';confidence=60;reason='Motstridiga signaler — invänta bekräftelse';
+    entry=null;stop=null;t1=null;t2=null;rr=null;
+  }
+  return{action,color,confidence,reason,entry,stop,t1,t2,rr,trendStrong};
+}
+
+function renderCard(sym) {
+  const d = BASE[sym];
+  const a = analyze(d, currentHorizon);
+  const isWait = a.action==='VÄNTA';
+  const isPos = d.change>=0;
+  const rrGood = a.rr>=2;
+
+  let levelsHTML = '';
+  if(!isWait){
+    levelsHTML=`
+    <div class="levels-section">
+      <div class="section-label">Nivåer</div>
+      <div class="levels-grid">
+        <div class="level-box" style="border:1px solid #ffffff20"><div class="level-label">ENTRY</div><div class="level-val" style="color:#fff">${fmt(a.entry,0)}</div></div>
+        <div class="level-box" style="border:1px solid #ff525220"><div class="level-label">STOP LOSS</div><div class="level-val" style="color:#ff5252">${fmt(a.stop,0)}</div></div>
+        <div class="level-box" style="border:1px solid #00e67620"><div class="level-label">MÅL 1</div><div class="level-val" style="color:#00e676">${fmt(a.t1,0)}</div></div>
+        <div class="level-box" style="border:1px solid #69f0ae20"><div class="level-label">MÅL 2</div><div class="level-val" style="color:#69f0ae">${fmt(a.t2,0)}</div></div>
+      </div>
+      <div class="rr-box" style="background:${rrGood?'#00e67610':'#ffab4010'};border:1px solid ${rrGood?'#00e67630':'#ffab4030'}">
+        <span style="font-size:11px;color:#888">Risk/Reward</span>
+        <span style="font-size:14px;font-weight:800;font-family:monospace;color:${rrGood?'#00e676':'#ffab40'}">1 : ${a.rr}</span>
+        <span style="font-size:10px;color:#555">${rrGood?'✓ Bra setup':'Marginellt'}</span>
+      </div>
+    </div>`;
+  } else {
+    levelsHTML=`<div class="levels-section"><div class="wait-box"><div class="wait-title">⏳ Invänta bekräftelse</div><p class="wait-text">Signalerna är motstridiga. En erfaren swingtrader sitter på händerna tills marknaden ger ett tydligare läge.</p></div></div>`;
+  }
+
+  const inds = [
+    {l:'RSI',v:fmt(d.rsi,1),s:d.rsi>70?'Överköpt':d.rsi<30?'Översålt':'Neutral',c:d.rsi>70?'#ff5252':d.rsi<30?'#00e676':'#888'},
+    {l:'Stoch',v:fmt(d.stochK,1),s:d.stochK>80?'Topp':d.stochK<20?'Botten':'Neutral',c:d.stochK>80?'#ff5252':d.stochK<20?'#00e676':'#888'},
+    {l:'ADX',v:fmt(d.adx,1),s:d.adx>30?'Stark trend':d.adx>20?'Trend':'Sidledes',c:d.adx>30?'#ffab40':'#888'},
+    {l:'MACD',v:fmt(d.macdHist,1),s:d.macdHist>0?'Positivt':'Negativt',c:d.macdHist>0?'#00e676':'#ff5252'},
+    {l:'EMA20',v:fmt(d.ema20,0),s:d.price>d.ema20?'Ovanför':'Nedanför',c:d.price>d.ema20?'#00e676':'#ff5252'},
+    {l:'Volym',v:fmtVol(d.volume),s:d.volume>d.avgVol?'Hög':'Låg',c:d.volume>d.avgVol?'#ffab40':'#555'},
+  ];
+
+  document.getElementById('card-'+sym).innerHTML = `
+    <div style="border:1px solid ${a.color}25;border-radius:12px;overflow:hidden;box-shadow:0 0 30px ${a.color}10">
+      <div class="card-header">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-size:18px">${d.flag}</span>
+            <span style="font-size:16px;font-weight:800;color:#fff">${sym}</span>
+            <span style="font-size:10px;color:#444;letter-spacing:1px">${d.name}</span>
+          </div>
+          <div class="price-row">
+            <span class="price">${fmt(d.price)}</span>
+            <span class="change" style="color:${isPos?'#00e676':'#ff5252'};background:${isPos?'#00e67615':'#ff525215'}">${isPos?'+':''}${fmt(d.change)}%</span>
+          </div>
+        </div>
+        <div class="action-badge" style="background:${a.color}18;border:2px solid ${a.color}40">
+          <div class="action-label">Åtgärd</div>
+          <div class="action-text" style="color:${a.color};text-shadow:0 0 12px ${a.color}60">${a.action}</div>
+        </div>
+      </div>
+      <div class="confidence-section">
+        <svg width="100" height="80" viewBox="0 0 128 90">
+          <path d="M14 75 A50 50 0 0 1 114 75" fill="none" stroke="#1a1a1a" stroke-width="10" stroke-linecap="round"/>
+          <path d="M14 75 A50 50 0 0 1 114 75" fill="none" stroke="${a.color}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${a.confidence*1.1} 110" style="filter:drop-shadow(0 0 6px ${a.color}60)"/>
+          <text x="64" y="62" text-anchor="middle" fill="${a.color}" font-size="20" font-family="monospace" font-weight="700">${a.confidence}%</text>
+          <text x="64" y="76" text-anchor="middle" fill="#555" font-size="8" font-family="monospace" letter-spacing="2">STYRKA</text>
+        </svg>
+        <div class="reason-box">
+          <div class="reason-label">Varför</div>
+          <div class="reason-text">${a.reason}</div>
+          ${a.trendStrong?'<div class="trend-badge">⚡ STARK TREND AKTIV</div>':''}
+        </div>
+      </div>
+      ${levelsHTML}
+      <div class="indicators-section">
+        <div class="section-label">Indikatorer</div>
+        <div class="ind-grid">
+          ${inds.map(i=>`<div class="ind-box" style="border:1px solid ${i.c}20"><div class="ind-label">${i.l}</div><div class="ind-val" style="color:${i.c}">${i.v}</div><div class="ind-status">${i.s}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderAll(){renderCard('US100');renderCard('OMX30')}
+
+function setHorizon(h, btn) {
+  currentHorizon=h;
+  document.querySelectorAll('.horizon-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAll();
+}
+
+function setTab(t, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['signal','chat','learn'].forEach(id=>{
+    const el=document.getElementById('tab-'+id);
+    el.classList.toggle('hidden', id!==t);
+    if(id===t) el.classList.add('fade');
+  });
+}
+
+function fillInput(text){document.getElementById('chat-input').value=text;document.getElementById('suggestions').style.display='none'}
+
+async function sendMsg() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML += `<div class="msg user">${text}</div>`;
+  input.value='';
+  document.getElementById('send-btn').disabled=true;
+  document.getElementById('suggestions').style.display='none';
+  msgs.innerHTML += `<div class="typing" id="typing"><div class="dot" style="animation-delay:0s"></div><div class="dot" style="animation-delay:.2s"></div><div class="dot" style="animation-delay:.4s"></div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  chatHistory.push({role:'user',content:text});
+
+  const d1=BASE.US100, d2=BASE.OMX30;
+  const system=`Du är en erfaren swingtrader och coach som undervisar nybörjare på svenska. Förklara alltid enkelt. Ge konkreta handlingsbara råd. Max 4 meningar. Aldrig garantier.
+Aktuell data: US100 Pris ${fmt(d1.price)} RSI ${fmt(d1.rsi,1)} MACD ${fmt(d1.macdHist,1)} ADX ${fmt(d1.adx,1)} ATR ${fmt(d1.atr,0)}
+OMX30 Pris ${fmt(d2.price)} RSI ${fmt(d2.rsi,1)} MACD ${fmt(d2.macdHist,1)} ADX ${fmt(d2.adx,1)} ATR ${fmt(d2.atr,0)}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system,messages:chatHistory})
+    });
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||'Kunde inte nå AI-tjänsten just nu.';
+    chatHistory.push({role:'assistant',content:reply});
+    document.getElementById('typing')?.remove();
+    msgs.innerHTML+=`<div class="msg ai">${reply}</div>`;
+  } catch {
+    document.getElementById('typing')?.remove();
+    msgs.innerHTML+=`<div class="msg ai">⚠️ Kunde inte nå AI-tjänsten. Försök igen.</div>`;
+  }
+  document.getElementById('send-btn').disabled=false;
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+// Clock
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('sv-SE')},1000);
+
+// Init
+renderAll();
+</script>
+</body>
+</html>
